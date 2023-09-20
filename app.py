@@ -20,7 +20,7 @@ class LMHeadModel:
             predictions = outputs.logits
         return predictions
 
-    def get_next_word_probabilities(self, sentence, top_k=50):
+    def get_next_word_probabilities(self, sentence, top_k=5):
         # Get the model predictions for the sentence.
         predictions = self.get_predictions(sentence)
 
@@ -52,10 +52,13 @@ model = LMHeadModel("gpt2")
 # Create a text input field for user input
 user_input = st.text_input("Enter a sentence:", "Hello how are")
 
+# Create a number input field for choosing the number of predicted words
+num_predictions = st.number_input("Number of Predicted Words (Top K):", min_value=1, value=5)
+
 # Create a button to trigger the predictions
 if st.button("Get Next Word Probabilities"):
     # Get the probabilities for the user input
-    probabilities = model.get_next_word_probabilities(user_input, top_k=50)
+    probabilities = model.get_next_word_probabilities(user_input, top_k=num_predictions)
 
     # Display the probabilities
     st.header("Next Word Probabilities:")
@@ -63,4 +66,4 @@ if st.button("Get Next Word Probabilities"):
         st.write(f"- {token}: {prob:.4f}")
 
 # Add some instructions for the user
-st.write("Enter a sentence, and the app will display the probabilities of the next word predictions.")
+st.write("Enter a sentence, choose the number of predicted words (top K), and click the button to see the probabilities.")
