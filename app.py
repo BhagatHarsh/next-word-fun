@@ -35,7 +35,7 @@ class LMHeadModel:
             predictions = outputs
         return predictions
 
-    def get_next_word_probabilities(self, sentence, top_k=5, temperature=1.0):
+    def get_next_word_probabilities(self, sentence, top_k=5, temperature=0.8):
         # Get the model predictions for the sentence.
         predictions = self.get_predictions(sentence, temperature=temperature)
 
@@ -70,7 +70,7 @@ user_input = st.text_input("Enter a sentence and press Enter:", "Hello how are")
 num_predictions = st.number_input("Number of Predicted Words (Top K):", min_value=1, value=5)
 
 # Create a number input field for setting the temperature (higher values make output more random)
-temperature = st.number_input("Temperature (1.0 is default):", min_value=0.1, value=1.0)
+temperature = st.number_input("Temperature (0.8 is default):", min_value=0.1, value=1.0)
 
 # Generate predictions when the user presses Enter
 if user_input:
