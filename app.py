@@ -59,37 +59,28 @@ class LMHeadModel:
 model = LMHeadModel("gpt2")
 
 # Create a text input field for user input
-user_input = st.text_input("Enter a sentence:", "Hello how are")
+user_input = st.text_input("Enter a sentence and press Enter:", "Hello how are")
 
 # Create a number input field for choosing the number of predicted words (top K)
 num_predictions = st.number_input("Number of Predicted Words (Top K):", min_value=1, value=5)
 
-# Create a button to trigger the predictions
-if st.button("Get Next Word Probabilities"):
-    # Get the probabilities for the user input
+# Generate predictions when the user presses Enter
+if user_input:
+    if st.session_state.get("sentences") is None:
+        st.session_state.sentences = []
+
+    st.session_state.sentences.append(user_input)
     probabilities = model.get_next_word_probabilities(user_input, top_k=num_predictions)
 
-    # Display the probabilities in a table
+    # Display the probabilities in a table with two columns
     st.header("Next Word Probabilities:")
     df = pd.DataFrame(probabilities, columns=["Word", "Probability"])
     st.dataframe(df)
 
-# Create a button to remove the last sentence
-if st.button("Remove Last Sentence"):
-    st.session_state.sentences.pop()
-
-# Store the sentences in a session state list
-if "sentences" not in st.session_state:
-    st.session_state.sentences = []
-
-# Add the entered sentence to the list
-if user_input:
-    st.session_state.sentences.append(user_input)
-
 # Display the list of entered sentences
-if st.session_state.sentences:
+if st.session_state.get("sentences"):
     st.header("Entered Sentences:")
     st.write(st.session_state.sentences)
 
 # Add some instructions for the user
-st.write("Enter a sentence, choose the number of predicted words (top K), and click the button to see the probabilities. You can also remove the last sentence entered.")
+st.write("Enter a sentence, choose the number of predicted words (top K), and press Enter to see the probabilities.")
