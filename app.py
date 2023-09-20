@@ -70,7 +70,8 @@ if user_input:
         st.session_state.sentences = []
 
     st.session_state.sentences.append(user_input)
-    probabilities = model.get_next_word_probabilities(user_input, top_k=num_predictions)
+    
+    probabilities = model.get_next_word_probabilities(user_input.strip(), top_k=num_predictions)
 
     # Display the probabilities in a table with two columns
     st.header("Next Word Probabilities:")
