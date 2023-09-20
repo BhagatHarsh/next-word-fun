@@ -21,39 +21,37 @@ class LMHeadModel:
         self.model = AutoModelForCausalLM.from_pretrained(model_name)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-    def get_predictions(self, sentence):
+    def get_predictions(self, sentence, temperature=1.0):
         # Encode the sentence using the tokenizer and return the model predictions.
         inputs = self.tokenizer.encode(sentence, return_tensors="pt")
         with torch.no_grad():
-            outputs = self.model(inputs)
-            predictions = outputs.logits
+            outputs = self.model.generate(
+                inputs,
+                max_length=50,  # Maximum length of the generated text
+                num_return_sequences=1,  # Number of sequences to generate
+                temperature=temperature,  # Temperature parameter for sampling
+            )
+            predictions = outputs
         return predictions
 
-    def get_next_word_probabilities(self, sentence, top_k=5):
+    def get_next_word_probabilities(self, sentence, top_k=5, temperature=1.0):
         # Get the model predictions for the sentence.
-        predictions = self.get_predictions(sentence)
+        predictions = self.get_predictions(sentence, temperature=temperature)
 
-        # Get the next token candidates.
-        next_token_candidates_tensor = predictions[0, -1, :]
+        # Decode the predictions into words.
+        predicted_tokens = [self.tokenizer.decode(seq) for seq in predictions]
 
-        # Get the top k next token candidates.
-        topk_candidates_indexes = torch.topk(
-            next_token_candidates_tensor, top_k).indices.tolist()
+        # Split the generated text into words.
+        words = predicted_tokens[0].split()
 
-        # Get the token probabilities for all candidates.
-        all_candidates_probabilities = torch.nn.functional.softmax(
-            next_token_candidates_tensor, dim=-1)
+        # Get the unique words and their counts.
+        word_counts = {word: words.count(word) for word in set(words)}
 
-        # Filter the token probabilities for the top k candidates.
-        topk_candidates_probabilities = \
-            all_candidates_probabilities[topk_candidates_indexes].tolist()
+        # Sort words by frequency in descending order.
+        sorted_words = sorted(word_counts.items(), key=lambda x: x[1], reverse=True)
 
-        # Decode the top k candidates back to words.
-        topk_candidates_tokens = \
-            [self.tokenizer.decode([idx]).strip() for idx in topk_candidates_indexes]
-
-        # Return the top k candidates and their probabilities.
-        return list(zip(topk_candidates_tokens, topk_candidates_probabilities))
+        # Return the top k words and their probabilities.
+        return sorted_words[:top_k]
 
 # Create an instance of the LMHeadModel
 model = LMHeadModel("gpt2")
@@ -64,18 +62,22 @@ user_input = st.text_input("Enter a sentence and press Enter:", "Hello how are")
 # Create a number input field for choosing the number of predicted words (top K)
 num_predictions = st.number_input("Number of Predicted Words (Top K):", min_value=1, value=5)
 
+# Create a number input field for setting the temperature (higher values make output more random)
+temperature = st.number_input("Temperature (1.0 is default):", min_value=0.1, value=1.0)
+
 # Generate predictions when the user presses Enter
 if user_input:
     if st.session_state.get("sentences") is None:
         st.session_state.sentences = []
 
     st.session_state.sentences.append(user_input)
-    
-    probabilities = model.get_next_word_probabilities(user_input.strip(), top_k=num_predictions)
+
+    # Get next word probabilities with the specified temperature
+    probabilities = model.get_next_word_probabilities(user_input.strip(), top_k=num_predictions, temperature=temperature)
 
     # Display the probabilities in a table with two columns
     st.header("Next Word Probabilities:")
-    df = pd.DataFrame(probabilities, columns=["Word", "Probability"])
+    df = pd.DataFrame(probabilities, columns=["Word", "Frequency"])
     st.dataframe(df)
 
 # Display the list of entered sentences
@@ -84,4 +86,4 @@ if st.session_state.get("sentences"):
     st.write(st.session_state.sentences)
 
 # Add some instructions for the user
-st.write("Enter a sentence, choose the number of predicted words (top K), and press Enter to see the probabilities.")
+st.write("Enter a sentence, choose the number of predicted words (top K), and adjust the temperature to control randomness. Press Enter to see the probabilities.")
