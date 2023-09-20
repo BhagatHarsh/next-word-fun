@@ -56,7 +56,7 @@ class LMHeadModel:
         # Calculate the probabilities of words.
         word_probabilities = [(word, count / total_word_count) for word, count in sorted_words]
 
-        # Return the top k words, their counts, and their probabilities.
+        # Return the top k words and their probabilities.
         return word_probabilities[:top_k]
 
 # Create an instance of the LMHeadModel
@@ -81,9 +81,9 @@ if user_input:
     # Get next word probabilities with the specified temperature
     word_probabilities = model.get_next_word_probabilities(user_input.strip(), top_k=num_predictions, temperature=temperature)
 
-    # Display the word counts and their probabilities in a table with three columns
-    st.header("Next Word Counts and Probabilities:")
-    df = pd.DataFrame(word_probabilities, columns=["Word", "Count", "Probability"])
+    # Display the word probabilities in a table with two columns
+    st.header("Next Word Probabilities:")
+    df = pd.DataFrame(word_probabilities, columns=["Word", "Probability"])
     st.dataframe(df)
 
 # Display the list of entered sentences
@@ -92,4 +92,4 @@ if st.session_state.get("sentences"):
     st.write(st.session_state.sentences)
 
 # Add some instructions for the user
-st.write("Enter a sentence, choose the number of predicted words (top K), and adjust the temperature to control randomness. Press Enter to see the word counts and their probabilities.")
+st.write("Enter a sentence, choose the number of predicted words (top K), and adjust the temperature to control randomness. Press Enter to see the word probabilities.")
