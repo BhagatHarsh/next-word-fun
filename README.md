@@ -12,4 +12,5 @@ pinned: false
 # next-word-fun
 It is an app where you can add a sentence and see how GPT models predict the next words
 
+You can checkout the project on [Hugging face](https://huggingface.co/spaces/Bhagu69/next-word-fun)
 
