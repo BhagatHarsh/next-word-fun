@@ -27,9 +27,10 @@ class LMHeadModel:
         with torch.no_grad():
             outputs = self.model.generate(
                 inputs,
-                max_length=50,  # Maximum length of the generated text
+                max_length=100,  # Increase the max_length to allow for more words
                 num_return_sequences=1,  # Number of sequences to generate
                 temperature=temperature,  # Temperature parameter for sampling
+                do_sample=True,  # Enable sampling-based generation
             )
             predictions = outputs
         return predictions
