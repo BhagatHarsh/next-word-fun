@@ -44,14 +44,20 @@ class LMHeadModel:
         # Split the generated text into words.
         words = predicted_tokens[0].split()
 
+        # Calculate the total count of words.
+        total_word_count = len(words)
+
         # Get the unique words and their counts.
         word_counts = {word: words.count(word) for word in set(words)}
 
         # Sort words by frequency in descending order.
         sorted_words = sorted(word_counts.items(), key=lambda x: x[1], reverse=True)
 
-        # Return the top k words and their probabilities.
-        return sorted_words[:top_k]
+        # Calculate the probabilities of words.
+        word_probabilities = [(word, count / total_word_count) for word, count in sorted_words]
+
+        # Return the top k words, their counts, and their probabilities.
+        return word_probabilities[:top_k]
 
 # Create an instance of the LMHeadModel
 model = LMHeadModel("gpt2")
@@ -73,11 +79,11 @@ if user_input:
     st.session_state.sentences.append(user_input)
 
     # Get next word probabilities with the specified temperature
-    probabilities = model.get_next_word_probabilities(user_input.strip(), top_k=num_predictions, temperature=temperature)
+    word_probabilities = model.get_next_word_probabilities(user_input.strip(), top_k=num_predictions, temperature=temperature)
 
-    # Display the probabilities in a table with two columns
-    st.header("Next Word Probabilities:")
-    df = pd.DataFrame(probabilities, columns=["Word", "Frequency"])
+    # Display the word counts and their probabilities in a table with three columns
+    st.header("Next Word Counts and Probabilities:")
+    df = pd.DataFrame(word_probabilities, columns=["Word", "Count", "Probability"])
     st.dataframe(df)
 
 # Display the list of entered sentences
@@ -86,4 +92,4 @@ if st.session_state.get("sentences"):
     st.write(st.session_state.sentences)
 
 # Add some instructions for the user
-st.write("Enter a sentence, choose the number of predicted words (top K), and adjust the temperature to control randomness. Press Enter to see the probabilities.")
+st.write("Enter a sentence, choose the number of predicted words (top K), and adjust the temperature to control randomness. Press Enter to see the word counts and their probabilities.")
