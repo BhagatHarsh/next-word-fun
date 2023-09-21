@@ -21,21 +21,21 @@ class LMHeadModel:
         self.model = AutoModelForCausalLM.from_pretrained(model_name)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-    def get_predictions(self, sentence, temperature=1.0):
+    def get_predictions(self, sentence, temperature=0.2):
         # Encode the sentence using the tokenizer and return the model predictions.
         inputs = self.tokenizer.encode(sentence, return_tensors="pt")
         with torch.no_grad():
             outputs = self.model.generate(
                 inputs,
-                max_length=100,  # Increase the max_length to allow for more words
-                num_return_sequences=1,  # Number of sequences to generate
+                max_length=10000,  # Increase the max_length to allow for more words
+                num_return_sequences=10,  # Number of sequences to generate
                 temperature=temperature,  # Temperature parameter for sampling
                 do_sample=True,  # Enable sampling-based generation
             )
             predictions = outputs
         return predictions
 
-    def get_next_word_probabilities(self, sentence, top_k=5, temperature=0.8):
+    def get_next_word_probabilities(self, sentence, top_k=5, temperature=0.2):
         # Get the model predictions for the sentence.
         predictions = self.get_predictions(sentence, temperature=temperature)
 
@@ -70,7 +70,7 @@ user_input = st.text_input("Enter a sentence and press Enter:", "Hello how are")
 num_predictions = st.number_input("Number of Predicted Words (Top K):", min_value=1, value=5)
 
 # Create a number input field for setting the temperature (higher values make output more random)
-temperature = st.number_input("Temperature (0.8 is default):", min_value=0.1, value=1.0)
+temperature = st.number_input("Temperature (0.2 is default):", min_value=0.1, value=0.2)
 
 # Generate predictions when the user presses Enter
 if user_input:
