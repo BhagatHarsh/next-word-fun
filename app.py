@@ -23,10 +23,11 @@ class LMHeadModel:
 
     def get_predictions(self, sentence, temperature=0.2):
         # Encode the sentence using the tokenizer and return the model predictions.
-        inputs = self.tokenizer.encode(sentence, return_tensors="pt")
+        inputs = self.tokenizer.encode_plus(sentence, return_tensors="pt", padding=True, truncation=True)
         with torch.no_grad():
             outputs = self.model.generate(
-                inputs,
+                inputs.input_ids,
+                attention_mask=inputs.attention_mask,
                 max_length=10000,  # Increase the max_length to allow for more words
                 num_return_sequences=10,  # Number of sequences to generate
                 temperature=temperature,  # Temperature parameter for sampling
