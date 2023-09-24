@@ -1,6 +1,6 @@
 ---
 title: Next Word Fun
-emoji: 👁
+emoji: 🎉
 colorFrom: green
 colorTo: indigo
 sdk: streamlit
