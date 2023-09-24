@@ -1,5 +1,5 @@
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import streamlit as st
 import pandas as pd
 
@@ -14,46 +14,50 @@ st.set_page_config(
 # Create a Streamlit app title with a catchy header
 st.title("Next Word Predictor with GPT-2")
 
-# Define the LMHeadModel class
+# Define the GPT2LMHeadModel class
 class LMHeadModel:
     def __init__(self, model_name):
-        # Initialize the model and the tokenizer.
-        self.model = AutoModelForCausalLM.from_pretrained(model_name)
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        # Initialize the model and the tokenizer
+        self.model = GPT2LMHeadModel.from_pretrained(model_name)
+        self.tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 
-    def get_predictions(self, sentence):
-        # Encode the sentence using the tokenizer and return the model predictions.
+    def get_predictions(self, sentence, temperature=0.2):
+        # Encode the sentence using the tokenizer and return the model predictions
         inputs = self.tokenizer.encode(sentence, return_tensors="pt")
         with torch.no_grad():
-            outputs = self.model(inputs)
-            predictions = outputs.logits
-        return predictions
+            outputs = self.model.generate(
+                inputs,
+                max_length=512,  # Reduce the max_length to avoid exceeding the model's limit
+                num_return_sequences=10,  # Number of sequences to generate
+                temperature=temperature,  # Temperature parameter for sampling
+                do_sample=True,  # Enable sampling-based generation
+            )
+        return outputs
 
-    def get_next_word_probabilities(self, sentence, top_k=5):
-        # Get the model predictions for the sentence.
-        predictions = self.get_predictions(sentence)
+    def get_next_word_probabilities(self, sentence, top_k=5, temperature=0.2):
+        # Get the model predictions for the sentence
+        predictions = self.get_predictions(sentence, temperature=temperature)
 
-        # Get the next token candidates.
-        next_token_candidates_tensor = predictions[0, -1, :]
+        # Decode the predictions into words
+        predicted_tokens = [self.tokenizer.decode(seq) for seq in predictions]
 
-        # Get the top k next token candidates.
-        topk_candidates_indexes = torch.topk(
-            next_token_candidates_tensor, top_k).indices.tolist()
+        # Split the generated text into words
+        words = predicted_tokens[0].split()
 
-        # Get the token probabilities for all candidates.
-        all_candidates_probabilities = torch.nn.functional.softmax(
-            next_token_candidates_tensor, dim=-1)
+        # Calculate the total count of words
+        total_word_count = len(words)
 
-        # Filter the token probabilities for the top k candidates.
-        topk_candidates_probabilities = \
-            all_candidates_probabilities[topk_candidates_indexes].tolist()
+        # Get the unique words and their counts
+        word_counts = {word: words.count(word) for word in set(words)}
 
-        # Decode the top k candidates back to words.
-        topk_candidates_tokens = \
-            [self.tokenizer.decode([idx]).strip() for idx in topk_candidates_indexes]
+        # Sort words by frequency in descending order
+        sorted_words = sorted(word_counts.items(), key=lambda x: x[1], reverse=True)
 
-        # Return the top k candidates and their probabilities.
-        return list(zip(topk_candidates_tokens, topk_candidates_probabilities))
+        # Calculate the probabilities of words
+        word_probabilities = [(word, count / total_word_count) for word, count in sorted_words]
+
+        # Return the top k words and their probabilities
+        return word_probabilities[:top_k]
 
 # Create an instance of the LMHeadModel
 model = LMHeadModel("gpt2")
@@ -64,18 +68,22 @@ user_input = st.text_input("Enter a sentence and press Enter:", "Hello how are")
 # Create a number input field for choosing the number of predicted words (top K)
 num_predictions = st.number_input("Number of Predicted Words (Top K):", min_value=1, value=5)
 
+# Create a number input field for setting the temperature (higher values make output more random)
+temperature = st.number_input("Temperature (0.2 is default):", min_value=0.1, value=0.2)
+
 # Generate predictions when the user presses Enter
 if user_input:
     if st.session_state.get("sentences") is None:
         st.session_state.sentences = []
 
     st.session_state.sentences.append(user_input)
-    
-    probabilities = model.get_next_word_probabilities(user_input.strip(), top_k=num_predictions)
 
-    # Display the probabilities in a table with two columns
+    # Get next word probabilities with the specified temperature
+    word_probabilities = model.get_next_word_probabilities(user_input.strip(), top_k=num_predictions, temperature=temperature)
+
+    # Display the word probabilities in a table with two columns
     st.header("Next Word Probabilities:")
-    df = pd.DataFrame(probabilities, columns=["Word", "Probability"])
+    df = pd.DataFrame(word_probabilities, columns=["Word", "Probability"])
     st.dataframe(df)
 
 # Display the list of entered sentences
@@ -84,4 +92,4 @@ if st.session_state.get("sentences"):
     st.write(st.session_state.sentences)
 
 # Add some instructions for the user
-st.write("Enter a sentence, choose the number of predicted words (top K), and press Enter to see the probabilities.")
+st.write("Enter a sentence, choose the number of predicted words (top K), and adjust the temperature to control randomness. Press Enter to see the word probabilities.")
