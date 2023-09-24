@@ -1,5 +1,5 @@
 import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
 import streamlit as st
 import pandas as pd
 
@@ -14,52 +14,49 @@ st.set_page_config(
 # Create a Streamlit app title with a catchy header
 st.title("Next Word Predictor with GPT-2")
 
-# Define the LMHeadModel class
+# Define the GPT2LMHeadModel class
 class LMHeadModel:
     def __init__(self, model_name):
-        # Initialize the model and the tokenizer.
-        self.model = AutoModelForCausalLM.from_pretrained(model_name)
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})  # Add padding token
+        # Initialize the model and the tokenizer
+        self.model = GPT2LMHeadModel.from_pretrained(model_name)
+        self.tokenizer = GPT2Tokenizer.from_pretrained(model_name)
 
     def get_predictions(self, sentence, temperature=0.2):
-        # Encode the sentence using the tokenizer and return the model predictions.
-        inputs = self.tokenizer.encode_plus(sentence, return_tensors="pt", padding=True, truncation=True)
+        # Encode the sentence using the tokenizer and return the model predictions
+        inputs = self.tokenizer.encode(sentence, return_tensors="pt")
         with torch.no_grad():
             outputs = self.model.generate(
-                inputs.input_ids,
-                attention_mask=inputs.attention_mask,
+                inputs,
                 max_length=10000,  # Increase the max_length to allow for more words
                 num_return_sequences=10,  # Number of sequences to generate
                 temperature=temperature,  # Temperature parameter for sampling
                 do_sample=True,  # Enable sampling-based generation
             )
-            predictions = outputs
-        return predictions
+        return outputs
 
     def get_next_word_probabilities(self, sentence, top_k=5, temperature=0.2):
-        # Get the model predictions for the sentence.
+        # Get the model predictions for the sentence
         predictions = self.get_predictions(sentence, temperature=temperature)
 
-        # Decode the predictions into words.
+        # Decode the predictions into words
         predicted_tokens = [self.tokenizer.decode(seq) for seq in predictions]
 
-        # Split the generated text into words.
+        # Split the generated text into words
         words = predicted_tokens[0].split()
 
-        # Calculate the total count of words.
+        # Calculate the total count of words
         total_word_count = len(words)
 
-        # Get the unique words and their counts.
+        # Get the unique words and their counts
         word_counts = {word: words.count(word) for word in set(words)}
 
-        # Sort words by frequency in descending order.
+        # Sort words by frequency in descending order
         sorted_words = sorted(word_counts.items(), key=lambda x: x[1], reverse=True)
 
-        # Calculate the probabilities of words.
+        # Calculate the probabilities of words
         word_probabilities = [(word, count / total_word_count) for word, count in sorted_words]
 
-        # Return the top k words and their probabilities.
+        # Return the top k words and their probabilities
         return word_probabilities[:top_k]
 
 # Create an instance of the LMHeadModel
