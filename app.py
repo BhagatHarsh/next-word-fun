@@ -72,19 +72,20 @@ num_predictions = st.number_input("Number of Predicted Words (Top K):", min_valu
 temperature = st.number_input("Temperature (0.2 is default):", min_value=0.1, value=0.2)
 
 # Generate predictions when the user presses Enter
-if user_input:
-    if st.session_state.get("sentences") is None:
-        st.session_state.sentences = []
+if st.button("Generate Predictions"):
+    if user_input:
+        if st.session_state.get("sentences") is None:
+            st.session_state.sentences = []
 
-    st.session_state.sentences.append(user_input)
+        st.session_state.sentences.append(user_input)
 
-    # Get next word probabilities with the specified temperature
-    word_probabilities = model.get_next_word_probabilities(user_input.strip(), top_k=num_predictions, temperature=temperature)
+        # Get next word probabilities with the specified temperature
+        word_probabilities = model.get_next_word_probabilities(user_input.strip(), top_k=num_predictions, temperature=temperature)
 
-    # Display the word probabilities in a table with two columns
-    st.header("Next Word Probabilities:")
-    df = pd.DataFrame(word_probabilities, columns=["Word", "Probability"])
-    st.dataframe(df)
+        # Display the word probabilities in a table with two columns
+        st.header("Next Word Probabilities:")
+        df = pd.DataFrame(word_probabilities, columns=["Word", "Probability"])
+        st.dataframe(df)
 
 # Display the list of entered sentences
 if st.session_state.get("sentences"):
@@ -92,4 +93,4 @@ if st.session_state.get("sentences"):
     st.write(st.session_state.sentences)
 
 # Add some instructions for the user
-st.write("Enter a sentence, choose the number of predicted words (top K), and adjust the temperature to control randomness. Press Enter to see the word probabilities.")
+st.write("Enter a sentence, choose the number of predicted words (top K), and adjust the temperature to control randomness. Click 'Generate Predictions' to see the word probabilities.")
