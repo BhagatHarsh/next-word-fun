@@ -20,6 +20,7 @@ class LMHeadModel:
         # Initialize the model and the tokenizer.
         self.model = AutoModelForCausalLM.from_pretrained(model_name)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
+        self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})  # Add padding token
 
     def get_predictions(self, sentence, temperature=0.2):
         # Encode the sentence using the tokenizer and return the model predictions.
