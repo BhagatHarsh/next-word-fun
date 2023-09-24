@@ -18,8 +18,8 @@ st.title("Next Word Predictor with GPT-2")
 class LMHeadModel:
     def __init__(self, model_name):
         # Initialize the model and the tokenizer
-        self.model = GPT2LMHeadModel.from_pretrained(model_name)
         self.tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+        self.model = GPT2LMHeadModel.from_pretrained(model_name, pad_token_id=self.tokenizer.eos_token_id)
 
     def get_predictions(self, sentence, temperature=0.2):
         # Encode the sentence using the tokenizer and return the model predictions
